@@ -181,13 +181,33 @@
                         let v=0;
                         if(cell.manual!==null) v=Number(cell.manual)||0;
                         else if(cell.placement) v=Number(pts[cell.placement])||0;
-                        if(cell.thType!==''){ v += thConfig[Number(cell.thType)]?.val||0; }
-                        if(cell.chType!==''){ v += chConfig[Number(cell.chType)]?.val||0; }
-                        roundScores[p]=v;
+                        let thName='';
+                        let chName='';
+                        if(cell.thType!==''){
+                            const idx=Number(cell.thType);
+                            v += thConfig[idx]?.val||0;
+                            thName = thConfig[idx]?.name || '';
+                        }
+                        if(cell.chType!==''){
+                            const idx=Number(cell.chType);
+                            v += chConfig[idx]?.val||0;
+                            chName = chConfig[idx]?.name || '';
+                        }
+                        roundScores[p]={score:v, placement:cell.placement, th:thName, ch:chName};
                     });
                     r.history = r.history || [];
                     r.history.push(roundScores);
-                    alert('Ván '+(i+1)+' điểm: '+PLAYERS.map(p=>document.getElementById('name-'+p).value+':'+roundScores[p]).join(', ')+"\nLịch sử: "+JSON.stringify(r.history));
+                    // build display string
+                    const display = PLAYERS.map(p=>{
+                        const n = document.getElementById('name-'+p).value;
+                        const info = roundScores[p];
+                        let s = n+':'+info.score;
+                        if(info.placement) s+=' (về '+info.placement+')';
+                        if(info.th) s+=' [thúi:'+info.th+']';
+                        if(info.ch) s+=' [chặt:'+info.ch+']';
+                        return s;
+                    }).join(', ');
+                    alert('Ván '+(i+1)+' điểm: '+display+"\nLịch sử: "+JSON.stringify(r.history));
                 });
                 const tdIndex=document.createElement('td');
                 tdIndex.className='small'; tdIndex.textContent=i+1;
