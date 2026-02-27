@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tính Điểm Bài Nước</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .reset-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .reset-btn:hover {
+            background: #ee5a52;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .player-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .player-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .player-card.player1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .player-card.player2 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .player-card.player3 {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .player-card.player4 {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .player-name-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .player-name-input {
+            flex: 1;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 8px 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .player-name-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .player-name-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .edit-icon {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .score-display {
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-add {
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid white;
+        }
+
+        .btn-add:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .btn-subtract {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-subtract:hover {
+            background: rgba(0, 0, 0, 0.4);
+            transform: scale(1.05);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .input-group input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-apply {
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid white;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-apply:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .stats {
+            background: #f5f7fa;
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .stats-title {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .stats-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                border-radius: 15px;
+            }
+
+            .players-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .player-card {
+                padding: 15px;
+            }
+
+            .score-display {
+                font-size: 36px;
+                margin: 15px 0;
+            }
+
+            .button-group {
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            .btn {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .players-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .score-display {
+                font-size: 32px;
+            }
+
+            .stats-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎰 TÍNH ĐIỂM BÀI NƯỚC</h1>
+            <button class="reset-btn" onclick="resetAllScores()">🔄 Reset Tất Cả</button>
+        </div>
+
+        <div class="players-grid" id="playersGrid"></div>
+
+        <div class="stats">
+            <div class="stats-title">📊 THỐNG KÊ</div>
+            <div class="stats-content">
+                <div class="stat-item">
+                    <div class="stat-label">Người Dẫn Đầu</div>
+                    <div class="stat-value" id="leader">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Điểm Cao Nhất</div>
+                    <div class="stat-value" id="highestScore">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Điểm Thấp Nhất</div>
+                    <div class="stat-value" id="lowestScore">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Tổng Cộng</div>
+                    <div class="stat-value" id="totalScore">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PLAYERS_COUNT = 4;
+        const DEFAULT_NAMES = ['Người 1', 'Người 2', 'Người 3', 'Người 4'];
+        const STORAGE_KEY = 'bainuoc_scores';
+
+        // Khởi tạo
+        let scores = {
+            player1: 0,
+            player2: 0,
+            player3: 0,
+            player4: 0
+        };
+
+        let names = {
+            player1: DEFAULT_NAMES[0],
+            player2: DEFAULT_NAMES[1],
+            player3: DEFAULT_NAMES[2],
+            player4: DEFAULT_NAMES[3]
+        };
+
+        // Load từ localStorage khi tải trang
+        function loadFromStorage() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                scores = { ...scores, ...data.scores };
+                names = { ...names, ...data.names };
+            }
+        }
+
+        // Lưu vào localStorage
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ scores, names }));
+        }
+
+        // Tạo các player card
+        function initializePlayers() {
+            const grid = document.getElementById('playersGrid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= PLAYERS_COUNT; i++) {
+                const playerId = `player${i}`;
+                const card = document.createElement('div');
+                card.className = `player-card ${playerId}`;
+                card.innerHTML = `
+                    <div class="player-name-wrapper">
+                        <input 
+                            type="text" 
+                            class="player-name-input" 
+                            id="name-${playerId}"
+                            value="${names[playerId]}"
+                            placeholder="Tên người chơi"
+                            onchange="updateName('${playerId}', this.value)"
+                        >
+                        <span class="edit-icon">✏️</span>
+                    </div>
+
+                    <div class="score-display" id="score-${playerId}">${scores[playerId]}</div>
+
+                    <div class="input-group">
+                        <input 
+                            type="number" 
+                            id="input-${playerId}" 
+                            placeholder="Nhập điểm"
+                            min="0"
+                        >
+                        <button class="btn-apply" onclick="addScore('${playerId}')">Cộng</button>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-add" onclick="addQuickScore('${playerId}', 10)">+10</button>
+                        <button class="btn btn-add" onclick="addQuickScore('${playerId}', 20)">+20</button>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-add" onclick="addQuickScore('${playerId}', 50)">+50</button>
+                        <button class="btn btn-add" onclick="addQuickScore('${playerId}', 100)">+100</button>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-subtract" onclick="subtractScore('${playerId}', 10)">-10</button>
+                        <button class="btn btn-subtract" onclick="subtractScore('${playerId}', 20)">-20</button>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-subtract" onclick="subtractScore('${playerId}', 50)">-50</button>
+                        <button class="btn btn-subtract" onclick="resetScore('${playerId}')">Reset</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        // Cập nhật tên người chơi
+        function updateName(playerId, newName) {
+            names[playerId] = newName || DEFAULT_NAMES[parseInt(playerId.replace('player', '')) - 1];
+            saveToStorage();
+            updateStats();
+        }
+
+        // Cộng điểm custom
+        function addScore(playerId) {
+            const input = document.getElementById(`input-${playerId}`);
+            const value = parseInt(input.value) || 0;
+            if (value > 0) {
+                scores[playerId] += value;
+                input.value = '';
+                updateDisplay();
+                saveToStorage();
+            }
+        }
+
+        // Cộng điểm nhanh
+        function addQuickScore(playerId, amount) {
+            scores[playerId] += amount;
+            updateDisplay();
+            saveToStorage();
+        }
+
+        // Trừ điểm
+        function subtractScore(playerId, amount) {
+            scores[playerId] -= amount;
+            updateDisplay();
+            saveToStorage();
+        }
+
+        // Reset một người chơi
+        function resetScore(playerId) {
+            scores[playerId] = 0;
+            updateDisplay();
+            saveToStorage();
+        }
+
+        // Reset tất cả
+        function resetAllScores() {
+            if (confirm('Bạn chắc chứ? Sẽ reset tất cả điểm!')) {
+                scores = {
+                    player1: 0,
+                    player2: 0,
+                    player3: 0,
+                    player4: 0
+                };
+                updateDisplay();
+                saveToStorage();
+            }
+        }
+
+        // Cập nhật hiển thị điểm
+        function updateDisplay() {
+            for (let i = 1; i <= PLAYERS_COUNT; i++) {
+                const playerId = `player${i}`;
+                const scoreElement = document.getElementById(`score-${playerId}`);
+                scoreElement.textContent = scores[playerId];
+            }
+            updateStats();
+        }
+
+        // Cập nhật thống kê
+        function updateStats() {
+            const scoreValues = Object.values(scores);
+            const maxScore = Math.max(...scoreValues);
+            const minScore = Math.min(...scoreValues);
+            const totalScore = scoreValues.reduce((a, b) => a + b, 0);
+
+            let leader = '-';
+            for (let i = 1; i <= PLAYERS_COUNT; i++) {
+                const playerId = `player${i}`;
+                if (scores[playerId] === maxScore && maxScore !== 0) {
+                    leader = names[playerId];
+                    break;
+                }
+            }
+
+            document.getElementById('leader').textContent = leader;
+            document.getElementById('highestScore').textContent = maxScore;
+            document.getElementById('lowestScore').textContent = minScore;
+            document.getElementById('totalScore').textContent = totalScore;
+        }
+
+        // Khởi động ứng dụng
+        window.addEventListener('DOMContentLoaded', function() {
+            loadFromStorage();
+            initializePlayers();
+            updateDisplay();
+        });
+
+        // Hỗ trợ Enter để nhập điểm
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.target.classList.contains('player-name-input')) {
+                e.target.blur();
+            }
+        });
+    </script>
+</body>
+</html>
