@@ -16,6 +16,9 @@
         .settings{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
         .settings label{font-size:12px;color:#334155}
         .settings input[type=number]{width:84px;padding:6px;border-radius:6px;border:1px solid #e2e8f0}
+        .placement-btns{display:flex;gap:4px;margin-bottom:4px}
+        .placement-btns .btn.small{padding:4px 6px}
+        .cell-controls select{width:100%;margin:2px 0}
 
         table{width:100%;border-collapse:collapse;margin-top:8px}
         thead th{background:#f8fafc;padding:8px;border-bottom:2px solid #e2e8f0;text-align:center;font-size:13px}
@@ -35,19 +38,29 @@
         <div class="top">
             <div>
                 <h1>📋 Bảng ván - Ghi điểm nhanh / Chọn về nhất/nhì/ba/bét</h1>
-                <div class="settings">
+                <div class="settings" id="settingsPanel" style="display:none">
                     <label class="small">1st <input id="pt1" type="number" value="100"></label>
                     <label class="small">2nd <input id="pt2" type="number" value="50"></label>
                     <label class="small">3rd <input id="pt3" type="number" value="20"></label>
                     <label class="small">4th <input id="pt4" type="number" value="0"></label>
-                    <label class="small">Chặt heo <input id="pen1" type="number" value="-50"></label>
-                    <label class="small">Thúi heo <input id="pen2" type="number" value="-100"></label>
+                    <label class="small">Điểm kết thúc <input id="endScore" type="number" value="0"></label>
+                    <div style="width:100%;margin-top:6px;font-size:12px;color:#334155">Tên loại thúi (giá trị):</div>
+                    <label class="small">1 <input id="thName1" placeholder="" value="Thúi1" style="width:80px"> <input id="thVal1" type="number" value="0" style="width:60px"></label>
+                    <label class="small">2 <input id="thName2" placeholder="" value="Thúi2" style="width:80px"> <input id="thVal2" type="number" value="0" style="width:60px"></label>
+                    <label class="small">3 <input id="thName3" placeholder="" value="Thúi3" style="width:80px"> <input id="thVal3" type="number" value="0" style="width:60px"></label>
+                    <label class="small">4 <input id="thName4" placeholder="" value="Thúi4" style="width:80px"> <input id="thVal4" type="number" value="0" style="width:60px"></label>
+                    <div style="width:100%;margin-top:6px;font-size:12px;color:#334155">Tên loại chặt (giá trị):</div>
+                    <label class="small">1 <input id="chName1" placeholder="" value="Chặt1" style="width:80px"> <input id="chVal1" type="number" value="0" style="width:60px"></label>
+                    <label class="small">2 <input id="chName2" placeholder="" value="Chặt2" style="width:80px"> <input id="chVal2" type="number" value="0" style="width:60px"></label>
+                    <label class="small">3 <input id="chName3" placeholder="" value="Chặt3" style="width:80px"> <input id="chVal3" type="number" value="0" style="width:60px"></label>
+                    <label class="small">4 <input id="chName4" placeholder="" value="Chặt4" style="width:80px"> <input id="chVal4" type="number" value="0" style="width:60px"></label>
                 </div>
             </div>
             <div class="controls">
                 <button class="btn" id="addRoundBtn">➕ Thêm ván</button>
                 <button class="btn ghost" id="recalcBtn">🔁 Tính lại</button>
                 <button class="btn ghost" id="clearRoundsBtn">🗑️ Xóa ván</button>
+                <button class="btn ghost" id="settingsToggle">⚙️ Cài đặt</button>
             </div>
         </div>
 
@@ -73,19 +86,26 @@
         const STORAGE_KEY = 'bainuoc_rounds_v2';
         const PLAYERS = ['player1','player2','player3','player4'];
 
+        // configuration helpers
+        function readPenaltyConfig(prefix){
+            const arr=[];
+            for(let i=1;i<=4;i++){
+                const nameEl = document.getElementById(prefix+"Name"+i);
+                const valEl = document.getElementById(prefix+"Val"+i);
+                arr.push({name: nameEl? nameEl.value : '', val: valEl? Number(valEl.value) : 0});
+            }
+            return arr;
+        }
         function getPlacementPoints(){
             return {
                 '1': Number(document.getElementById('pt1').value)||0,
                 '2': Number(document.getElementById('pt2').value)||0,
                 '3': Number(document.getElementById('pt3').value)||0,
                 '4': Number(document.getElementById('pt4').value)||0
-            }
+            };
         }
-        function getPenalties(){
-            return {
-                pen1: Number(document.getElementById('pen1').value)||0,
-                pen2: Number(document.getElementById('pen2').value)||0
-            }
+        function getEndScore(){
+            return Number(document.getElementById('endScore').value)||0;
         }
 
         let rounds = [];
@@ -93,7 +113,15 @@
         function save(){
             const names = {};
             PLAYERS.forEach(p=>names[p]=document.getElementById('name-'+p).value||p);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({rounds, names, pts:getPlacementPoints(), pens:getPenalties()}));
+            const data = {
+                rounds,
+                names,
+                pts:getPlacementPoints(),
+                endScore:getEndScore(),
+                thConfig: readPenaltyConfig('th'),
+                chConfig: readPenaltyConfig('ch')
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
 
         function load(){
@@ -104,14 +132,26 @@
                 rounds = data.rounds || [];
                 if(data.names) PLAYERS.forEach(p=>document.getElementById('name-'+p).value = data.names[p] || document.getElementById('name-'+p).value);
                 if(data.pts){document.getElementById('pt1').value=data.pts['1'];document.getElementById('pt2').value=data.pts['2'];document.getElementById('pt3').value=data.pts['3'];document.getElementById('pt4').value=data.pts['4'];}
-                if(data.pens){document.getElementById('pen1').value=data.pens.pen1;document.getElementById('pen2').value=data.pens.pen2}
+                if(data.endScore!==undefined){document.getElementById('endScore').value=data.endScore;}
+                if(data.thConfig){
+                    data.thConfig.forEach((c,i)=>{
+                        if(document.getElementById('thName'+(i+1))) document.getElementById('thName'+(i+1)).value=c.name;
+                        if(document.getElementById('thVal'+(i+1))) document.getElementById('thVal'+(i+1)).value=c.val;
+                    });
+                }
+                if(data.chConfig){
+                    data.chConfig.forEach((c,i)=>{
+                        if(document.getElementById('chName'+(i+1))) document.getElementById('chName'+(i+1)).value=c.name;
+                        if(document.getElementById('chVal'+(i+1))) document.getElementById('chVal'+(i+1)).value=c.val;
+                    });
+                }
             }catch(e){console.warn('load error',e)}
         }
 
         function addRound(){
             const idx = rounds.length+1;
-            const row = {id:Date.now(), note:'', players:{}};
-            PLAYERS.forEach(p=> row.players[p] = {placement:'', manual:null, chatheo:false, thuheo:false});
+            const row = {id:Date.now(), note:'', players:{}, history:[]};
+            PLAYERS.forEach(p=> row.players[p] = {placement:'', manual:null, thType:'', chType:''});
             rounds.push(row);
             renderRounds();
             save();
@@ -126,28 +166,81 @@
         function renderRounds(){
             const body = document.getElementById('roundsBody');
             body.innerHTML='';
-            rounds.forEach((r, i)=>{
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="small">${i+1}</td>
-                    ${PLAYERS.map(p=>`<td>
-                        <div class="cell-controls">
-                            <select data-player="${p}" data-id="${r.id}" class="placement">
-                                <option value="">-</option>
-                                <option value="1" ${r.players[p].placement==='1'?'selected':''}>1</option>
-                                <option value="2" ${r.players[p].placement==='2'?'selected':''}>2</option>
-                                <option value="3" ${r.players[p].placement==='3'?'selected':''}>3</option>
-                                <option value="4" ${r.players[p].placement==='4'?'selected':''}>4</option>
-                            </select>
-                            <div>
-                                <label class="small"><input type="checkbox" data-player="${p}" data-id="${r.id}" class="ch" ${r.players[p].chatheo? 'checked':''}> chặt</label>
-                                <label class="small"><input type="checkbox" data-player="${p}" data-id="${r.id}" class="th" ${r.players[p].thuheo? 'checked':''}> thúi</label>
-                            </div>
-                            <input type="number" placeholder="Ghi điểm" value="${r.players[p].manual===null?'':r.players[p].manual}" data-player="${p}" data-id="${r.id}" class="manual small">
-                        </div>
-                    </td>`).join('')}
-                    <td class="round-actions"><button class="btn ghost" onclick="removeRound(${r.id})">Xóa</button></td>
-                `;
+            const thConfig = readPenaltyConfig('th');
+            const chConfig = readPenaltyConfig('ch');
+            rounds.forEach((r,i)=>{
+                const tr=document.createElement('tr');
+                // clicking row saves history of that round
+                tr.addEventListener('click', ()=>{
+                    const roundScores={};
+                    const pts=getPlacementPoints();
+                    const thConfig=readPenaltyConfig('th');
+                    const chConfig=readPenaltyConfig('ch');
+                    PLAYERS.forEach(p=>{
+                        const cell=r.players[p];
+                        let v=0;
+                        if(cell.manual!==null) v=Number(cell.manual)||0;
+                        else if(cell.placement) v=Number(pts[cell.placement])||0;
+                        if(cell.thType!==''){ v += thConfig[Number(cell.thType)]?.val||0; }
+                        if(cell.chType!==''){ v += chConfig[Number(cell.chType)]?.val||0; }
+                        roundScores[p]=v;
+                    });
+                    r.history = r.history || [];
+                    r.history.push(roundScores);
+                    alert('Ván '+(i+1)+' điểm: '+PLAYERS.map(p=>document.getElementById('name-'+p).value+':'+roundScores[p]).join(', ')+"\nLịch sử: "+JSON.stringify(r.history));
+                });
+                const tdIndex=document.createElement('td');
+                tdIndex.className='small'; tdIndex.textContent=i+1;
+                tr.appendChild(tdIndex);
+                PLAYERS.forEach(p=>{
+                    const cell=r.players[p];
+                    const td=document.createElement('td');
+                    const wrapper=document.createElement('div'); wrapper.className='cell-controls';
+                    // placement buttons
+                    const divPlacement=document.createElement('div'); divPlacement.className='placement-btns';
+                    for(let num=1;num<=4;num++){
+                        const btn=document.createElement('button');
+                        btn.className='btn small'; btn.textContent=num;
+                        btn.dataset.player=p; btn.dataset.id=r.id; btn.dataset.type='placement'; btn.dataset.value=num;
+                        if(cell.placement==String(num)) btn.style.fontWeight='700';
+                        const disabled=PLAYERS.some(other=>other!==p && r.players[other].placement==String(num));
+                        if(disabled) btn.disabled=true;
+                        divPlacement.appendChild(btn);
+                    }
+                    wrapper.appendChild(divPlacement);
+                    // th select
+                    const selTh=document.createElement('select'); selTh.className='small';
+                    selTh.dataset.player=p; selTh.dataset.id=r.id; selTh.dataset.type='th';
+                    selTh.appendChild(new Option('-', ''));
+                    thConfig.forEach((opt,idx)=>{
+                        const o=new Option(opt.name, idx);
+                        if(cell.thType==String(idx)) o.selected=true;
+                        selTh.appendChild(o);
+                    });
+                    wrapper.appendChild(selTh);
+                    // ch select
+                    const selCh=document.createElement('select'); selCh.className='small';
+                    selCh.dataset.player=p; selCh.dataset.id=r.id; selCh.dataset.type='ch';
+                    selCh.appendChild(new Option('-', ''));
+                    chConfig.forEach((opt,idx)=>{
+                        const o=new Option(opt.name, idx);
+                        if(cell.chType==String(idx)) o.selected=true;
+                        selCh.appendChild(o);
+                    });
+                    wrapper.appendChild(selCh);
+                    // manual input
+                    const inp=document.createElement('input'); inp.type='number'; inp.placeholder='Ghi điểm';
+                    inp.className='manual small'; inp.dataset.player=p; inp.dataset.id=r.id; inp.dataset.type='manual';
+                    if(cell.manual!==null) inp.value=cell.manual;
+                    wrapper.appendChild(inp);
+                    td.appendChild(wrapper);
+                    tr.appendChild(td);
+                });
+                const tdAct=document.createElement('td'); tdAct.className='round-actions';
+                const btnRem=document.createElement('button'); btnRem.className='btn ghost'; btnRem.textContent='Xóa';
+                btnRem.onclick=()=>removeRound(r.id);
+                tdAct.appendChild(btnRem);
+                tr.appendChild(tdAct);
                 body.appendChild(tr);
             });
             attachRowListeners();
@@ -155,14 +248,38 @@
         }
 
         function attachRowListeners(){
-            document.querySelectorAll('.placement').forEach(sel=>sel.onchange = (e)=>{
-                const id = Number(e.target.dataset.id);
-                const p = e.target.dataset.player;
-                const r = rounds.find(rr=>rr.id===id);
-                r.players[p].placement = e.target.value;
-                if(e.target.value) r.players[p].manual = null;
-                save(); recalcTotals();
+            // placement buttons
+            document.querySelectorAll('button[data-type="placement"]').forEach(btn=>{
+                btn.onclick = e=>{
+                    const id = Number(e.target.dataset.id);
+                    const p = e.target.dataset.player;
+                    const val = e.target.dataset.value;
+                    const r = rounds.find(rr=>rr.id===id);
+                    r.players[p].placement = r.players[p].placement===val ? '' : val;
+                    if(r.players[p].placement) r.players[p].manual = null;
+                    save(); renderRounds();
+                };
             });
+            // selects for th and ch
+            document.querySelectorAll('select[data-type="th"]').forEach(sel=>{
+                sel.onchange = e=>{
+                    const id = Number(e.target.dataset.id);
+                    const p = e.target.dataset.player;
+                    const r = rounds.find(rr=>rr.id===id);
+                    r.players[p].thType = e.target.value;
+                    save(); recalcTotals();
+                };
+            });
+            document.querySelectorAll('select[data-type="ch"]').forEach(sel=>{
+                sel.onchange = e=>{
+                    const id = Number(e.target.dataset.id);
+                    const p = e.target.dataset.player;
+                    const r = rounds.find(rr=>rr.id===id);
+                    r.players[p].chType = e.target.value;
+                    save(); recalcTotals();
+                };
+            });
+            // manual inputs
             document.querySelectorAll('.manual').forEach(inp=>inp.oninput = (e)=>{
                 const id = Number(e.target.dataset.id);
                 const p = e.target.dataset.player;
@@ -172,25 +289,13 @@
                 if(r.players[p].manual !== null) r.players[p].placement = '';
                 save(); recalcTotals();
             });
-            document.querySelectorAll('.ch').forEach(cb=>cb.onchange = (e)=>{
-                const id = Number(e.target.dataset.id);
-                const p = e.target.dataset.player;
-                const r = rounds.find(rr=>rr.id===id);
-                r.players[p].chatheo = e.target.checked;
-                save(); recalcTotals();
-            });
-            document.querySelectorAll('.th').forEach(cb=>cb.onchange = (e)=>{
-                const id = Number(e.target.dataset.id);
-                const p = e.target.dataset.player;
-                const r = rounds.find(rr=>rr.id===id);
-                r.players[p].thuheo = e.target.checked;
-                save(); recalcTotals();
-            });
         }
 
         function recalcTotals(){
             const pts = getPlacementPoints();
-            const pens = getPenalties();
+            const endScore = getEndScore();
+            const thConfig = readPenaltyConfig('th');
+            const chConfig = readPenaltyConfig('ch');
             const totals = {};
             PLAYERS.forEach(p=>totals[p]=0);
             rounds.forEach(r=>{
@@ -199,12 +304,30 @@
                     let v = 0;
                     if(cell.manual !== null){ v = Number(cell.manual) || 0; }
                     else if(cell.placement){ v = Number(pts[cell.placement]) || 0; }
-                    if(cell.chatheo) v += Number(pens.pen1)||0;
-                    if(cell.thuheo) v += Number(pens.pen2)||0;
+                    if(cell.thType !== ''){
+                        const idx=Number(cell.thType);
+                        v += thConfig[idx]?.val||0;
+                    }
+                    if(cell.chType !== ''){
+                        const idx=Number(cell.chType);
+                        v += chConfig[idx]?.val||0;
+                    }
                     totals[p] += v;
                 });
             });
             renderTotals(totals);
+            // auto-add round if nobody reached end score and last round not empty
+            if(endScore>0){
+                const maxScore = Math.max(...Object.values(totals));
+                const last = rounds[rounds.length-1];
+                const emptyLast = last && PLAYERS.every(p=>{
+                    const c=last.players[p];
+                    return c.placement==='' && c.manual===null && c.thType==='' && c.chType==='' ;
+                });
+                if(maxScore < endScore && !emptyLast){
+                    addRound();
+                }
+            }
         }
 
         function renderTotals(totals){
@@ -223,10 +346,24 @@
         document.getElementById('addRoundBtn').onclick = ()=>{ addRound(); };
         document.getElementById('recalcBtn').onclick = ()=>{ recalcTotals(); save(); };
         document.getElementById('clearRoundsBtn').onclick = ()=>{ if(confirm('Xóa mọi ván?')){ rounds=[]; renderRounds(); save(); }};
+        document.getElementById('settingsToggle').onclick = ()=>{
+            const panel = document.getElementById('settingsPanel');
+            panel.style.display = panel.style.display==='none'?'flex':'none';
+        };
 
-        // Save names/points change
+        // Save on various configuration changes
         document.querySelectorAll('.player-name').forEach(inp=>inp.onchange = ()=>save());
-        document.getElementById('pt1').onchange = document.getElementById('pt2').onchange = document.getElementById('pt3').onchange = document.getElementById('pt4').onchange = document.getElementById('pen1').onchange = document.getElementById('pen2').onchange = ()=>{ save(); recalcTotals(); };
+        ['pt1','pt2','pt3','pt4','endScore'].forEach(id=>{
+            const el=document.getElementById(id);
+            if(el) el.onchange = ()=>{ save(); recalcTotals(); };
+        });
+        // penalty config inputs
+        Array.from({length:4},(_,i)=>i+1).forEach(i=>{
+            ['thName','thVal','chName','chVal'].forEach(pref=>{
+                const el=document.getElementById(pref+i);
+                if(el) el.onchange = ()=>{ save(); recalcTotals(); };
+            });
+        });
 
         // Init
         window.addEventListener('DOMContentLoaded', ()=>{
